@@ -1,91 +1,78 @@
-import React, { Component } from 'react';
+import { useState } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
+import initialContacts from './data/contacts.json';
 import PropTypes from 'prop-types';
 import { ContactList } from 'components/ContactList/ContactList';
 import { Filter } from 'components/Filter/Filter';
-import ContactForm from 'components/ContactForm/ContactForm';
+import { ContactForm } from 'components/ContactForm/ContactForm';
 import { Section } from 'components/Section/Section';
 import { Container } from './App.styled';
+import useLocaleStorage from 'components/localStorage';
+import shortid from 'shortid';
+import { notifyOptions } from 'components/notifyOptions';
 
-export class App extends Component {
-  state = {
-    contacts: [
-      { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
-      { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
-      { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
-      { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
-    ],
-    filter: '',
-  };
+export const App = () => {
+  const [contacts, setContacts] = useLocaleStorage('contacts', initialContacts);
+  const [filter, setFilter] = useState('');
 
-  componentDidMount() {
-    const contactsLS = JSON.parse(localStorage.getItem('contacts'));
-    if (contactsLS) {
-      this.setState({ contacts: contactsLS });
-    }
-  }
+  const addContact = ({ name, number }) => {
+    const normalizedName = name.toLowerCase();
+    const isAdded = contacts.find(
+      el => el.name.toLowerCase() === normalizedName
+    );
 
-  componentDidUpdate(_, prevState) {
-    const { contacts } = this.state;
-    if (this.state.contacts !== prevState.contacts) {
-      localStorage.setItem('contacts', JSON.stringify(contacts));
-    }
-  }
-
-  formSubmitHandler = contact => {
-    const { contacts } = this.state;
-    const existingContact = contacts.find(cont => cont.name === contact.name);
-
-    if (existingContact) {
-      alert(`Contact with name "${contact.name}" already exists!`);
+    if (isAdded) {
+      toast.error(`${name}: is already in contacts`, notifyOptions);
       return;
     }
 
-    this.setState(prevState => ({
-      contacts: [...prevState.contacts, contact],
-    }));
+    const contact = {
+      id: shortid.generate(),
+      name: name,
+      number: number,
+    };
+
+    setContacts(prevState => [...prevState, contact]);
   };
 
-  handleDeleteContact = id => {
-    this.setState(prevState => ({
-      contacts: prevState.contacts.filter(contact => contact.id !== id),
-    }));
-  };
-
-  handleFilterChange = e => {
-    this.setState({ filter: e.target.value });
-  };
-
-  getFilteredContacts() {
-    const { contacts, filter } = this.state;
+  const getVisibleContacts = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
       contact.name.toLowerCase().includes(normalizedFilter)
     );
-  }
+  };
 
-  render() {
-    return (
-      <Container>
-        <Section title="Phonebook">
-          <ContactForm onSubmit={this.formSubmitHandler} />
-        </Section>
+  const changeFilter = e => {
+    setFilter(e.currentTarget.value);
+  };
 
-        <Section title="Contacts">
-          <Filter
-            title="Find contact by name"
-            onChange={this.handleFilterChange}
-            value={this.state.filter}
-          />
-          <ContactList
-            contacts={this.getFilteredContacts()}
-            onDeleteContact={this.handleDeleteContact}
-          />
-        </Section>
-      </Container>
+  const deleteContacts = contactId => {
+    setContacts(prevState =>
+      prevState.filter(contact => contact.id !== contactId)
     );
-  }
-}
+  };
+
+  const visibleContacts = getVisibleContacts();
+
+  return (
+    <Container>
+      <Section title="Phonebook">
+        <ContactForm onSubmit={addContact} />
+      </Section>
+
+      <Section title="Contacts">
+        <Filter
+          value={filter}
+          onChange={changeFilter}
+          title="Find contact by name"
+        />
+        <ContactList contacts={visibleContacts} onDelete={deleteContacts} />
+      </Section>
+    </Container>
+  );
+};
 
 App.propTypes = {
   contacts: PropTypes.arrayOf(
