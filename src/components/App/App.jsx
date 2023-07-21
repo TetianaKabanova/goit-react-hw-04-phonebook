@@ -1,42 +1,56 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import initialContacts from './data/contacts.json';
-import PropTypes from 'prop-types';
+
 import { ContactList } from 'components/ContactList/ContactList';
 import { Filter } from 'components/Filter/Filter';
 import { ContactForm } from 'components/ContactForm/ContactForm';
 import { Section } from 'components/Section/Section';
 import { Container } from './App.styled';
-import useLocaleStorage from 'components/localStorage';
-import shortid from 'shortid';
+
 import { notifyOptions } from 'components/notifyOptions';
 
 export const App = () => {
-  const [contacts, setContacts] = useLocaleStorage('contacts', initialContacts);
+  const [contacts, setContacts] = useState([
+    { id: 'id-1', name: 'Rosie Simpson', number: '459-12-56' },
+    { id: 'id-2', name: 'Hermione Kline', number: '443-89-12' },
+    { id: 'id-3', name: 'Eden Clements', number: '645-17-79' },
+    { id: 'id-4', name: 'Annie Copeland', number: '227-91-26' },
+  ]);
   const [filter, setFilter] = useState('');
 
-  const addContact = ({ name, number }) => {
-    const normalizedName = name.toLowerCase();
-    const isAdded = contacts.find(
-      el => el.name.toLowerCase() === normalizedName
-    );
+  const formSubmitHandler = contact => {
+    const existingContact = contacts.find(cont => cont.name === contact.name);
 
-    if (isAdded) {
-      toast.error(`${name}: is already in contacts`, notifyOptions);
-      return;
+    if (existingContact) {
+      return toast.error(
+        `Contact with name "${contact.name}" already exists!`,
+        notifyOptions
+      );
     }
 
-    const contact = {
-      id: shortid.generate(),
-      name: name,
-      number: number,
-    };
-
-    setContacts(prevState => [...prevState, contact]);
+    setContacts(prevContacts => [...prevContacts, contact]);
+    toast.success(
+      `Contact with name ${contact.name} is added to the contact list!`,
+      notifyOptions
+    );
   };
 
-  const getVisibleContacts = () => {
+  const handleDeleteContact = (id, name) => {
+    setContacts(prevContacts =>
+      prevContacts.filter(contact => contact.id !== id)
+    );
+    toast.info(
+      `Contact with with name ${name} has been deleted!`,
+      notifyOptions
+    );
+  };
+
+  const handleFilterChange = e => {
+    setFilter(e.target.value);
+  };
+
+  const getFilteredContacts = () => {
     const normalizedFilter = filter.toLowerCase();
 
     return contacts.filter(contact =>
@@ -44,48 +58,35 @@ export const App = () => {
     );
   };
 
-  const changeFilter = e => {
-    setFilter(e.currentTarget.value);
-  };
+  useEffect(() => {
+    const savedStringifiedContacts = localStorage.getItem('contacts');
+    const contacts = JSON.parse(savedStringifiedContacts) ?? [];
+    setContacts(contacts);
+  }, []);
 
-  const deleteContacts = contactId => {
-    setContacts(prevState =>
-      prevState.filter(contact => contact.id !== contactId)
-    );
-  };
-
-  const visibleContacts = getVisibleContacts();
+  useEffect(() => {
+    const savedStringifiedContacts = JSON.stringify(contacts);
+    localStorage.setItem('contacts', savedStringifiedContacts);
+  }, [contacts]);
 
   return (
     <Container>
       <Section title="Phonebook">
-        <ContactForm onSubmit={addContact} />
+        <ContactForm onSubmit={formSubmitHandler} />
       </Section>
-
+      <ToastContainer />
       <Section title="Contacts">
         <Filter
-          value={filter}
-          onChange={changeFilter}
           title="Find contact by name"
+          onChange={handleFilterChange}
+          value={filter}
         />
-        <ContactList contacts={visibleContacts} onDelete={deleteContacts} />
+        <ContactList
+          contacts={getFilteredContacts()}
+          onDeleteContact={handleDeleteContact}
+        />
       </Section>
+      <ToastContainer />
     </Container>
   );
-};
-
-App.propTypes = {
-  contacts: PropTypes.arrayOf(
-    PropTypes.shape({
-      id: PropTypes.string.isRequired,
-      name: PropTypes.string.isRequired,
-      number: PropTypes.string.isRequired,
-    })
-  ),
-  filter: PropTypes.string.isRequired,
-  addContact: PropTypes.func.isRequired,
-  deleteContact: PropTypes.func.isRequired,
-  changeFilter: PropTypes.func.isRequired,
-  findContacts: PropTypes.func.isRequired,
-  duplicationContacts: PropTypes.func.isRequired,
 };

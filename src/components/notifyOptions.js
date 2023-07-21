@@ -1,6 +1,6 @@
 export const notifyOptions = {
-  position: 'bottom-left',
-  autoClose: 5000,
+  position: 'top-right',
+  autoClose: 2000,
   hideProgressBar: false,
   closeOnClick: true,
   pauseOnHover: true,

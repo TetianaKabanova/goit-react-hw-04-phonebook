@@ -3,7 +3,7 @@ import {
   ContactsList,
   ContactItem,
   Contact,
-  DeleateButton,
+  DeleteButton,
 } from './ContactList.styled';
 
 export const ContactList = ({ contacts, onDeleteContact }) => {
@@ -15,9 +15,9 @@ export const ContactList = ({ contacts, onDeleteContact }) => {
             <Contact>
               {name}: {number}
             </Contact>
-            <DeleateButton type="button" onClick={() => onDeleteContact(id)}>
+            <DeleteButton onClick={() => onDeleteContact(id, name)}>
               Delete
-            </DeleateButton>
+            </DeleteButton>
           </ContactItem>
         );
       })}
@@ -31,7 +31,7 @@ ContactList.propTypes = {
     PropTypes.shape({
       id: PropTypes.string.isRequired,
       name: PropTypes.string.isRequired,
-      number: PropTypes.number.isRequired,
+      number: PropTypes.string.isRequired,
     })
   ).isRequired,
 };

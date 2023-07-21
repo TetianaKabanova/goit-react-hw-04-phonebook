@@ -18,7 +18,7 @@ export const Contact = styled.p`
   color: ${p => p.theme.colors.primary};
 `;
 
-export const DeleateButton = styled.button`
+export const DeleteButton = styled.button`
   display: flex;
   align-items: center;
   gap: 10px;
